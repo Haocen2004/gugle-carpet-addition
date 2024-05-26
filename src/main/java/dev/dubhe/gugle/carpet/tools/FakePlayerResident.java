@@ -1,23 +1,37 @@
 package dev.dubhe.gugle.carpet.tools;
 
+import carpet.CarpetSettings;
 import carpet.fakes.ServerPlayerInterface;
 import carpet.helpers.EntityPlayerActionPack;
 import carpet.patches.EntityPlayerMPFake;
+import carpet.patches.FakeClientConnection;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.mojang.authlib.GameProfile;
 import dev.dubhe.gugle.carpet.GcaSetting;
 import dev.dubhe.gugle.carpet.mixin.APAccessor;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.protocol.PacketFlow;
+import net.minecraft.network.protocol.game.ClientboundRotateHeadPacket;
+import net.minecraft.network.protocol.game.ClientboundTeleportEntityPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ClientInformation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.network.CommonListenerCookie;
+import net.minecraft.server.players.GameProfileCache;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
+
+import static net.minecraft.world.level.block.entity.SkullBlockEntity.fetchGameProfile;
 
 public class FakePlayerResident {
 
@@ -49,20 +63,53 @@ public class FakePlayerResident {
     public static void load(Map.@NotNull Entry<String, JsonElement> entry, MinecraftServer server) {
         String username = entry.getKey();
         JsonObject fakePlayer = entry.getValue().getAsJsonObject();
-        double pos_x = fakePlayer.get("pos_x").getAsDouble();
-        double pos_y = fakePlayer.get("pos_y").getAsDouble();
-        double pos_z = fakePlayer.get("pos_z").getAsDouble();
-        double yaw = fakePlayer.get("yaw").getAsDouble();
-        double pitch = fakePlayer.get("pitch").getAsDouble();
+//        double pos_x = fakePlayer.get("pos_x").getAsDouble();
+//        double pos_y = fakePlayer.get("pos_y").getAsDouble();
+//        double pos_z = fakePlayer.get("pos_z").getAsDouble();
+//        double yaw = fakePlayer.get("yaw").getAsDouble();
+//        double pitch = fakePlayer.get("pitch").getAsDouble();
         String dimension = fakePlayer.get("dimension").getAsString();
-        String gamemode = fakePlayer.get("gamemode").getAsString();
-        boolean flying = fakePlayer.get("flying").getAsBoolean();
+//        String gamemode = fakePlayer.get("gamemode").getAsString();
+//        boolean flying = fakePlayer.get("flying").getAsBoolean();
         if (GcaSetting.fakePlayerReloadAction && fakePlayer.has("actions")) {
             JsonObject actions = fakePlayer.get("actions").getAsJsonObject();
-            EntityPlayerMPFake playerMPFake = EntityPlayerMPFake.createFake(username, server, new Vec3(pos_x, pos_y, pos_z), yaw, pitch,
-                    ResourceKey.create(Registries.DIMENSION, new ResourceLocation(dimension)),
-                    GameType.byName(gamemode), flying);
-            apFromJson(actions, playerMPFake);
+            ServerLevel worldIn = server.getLevel(ResourceKey.create(Registries.DIMENSION, new ResourceLocation(dimension)));
+
+
+//            EntityPlayerMPFake playerMPFake = EntityPlayerMPFake.createFake(username, server, new Vec3(pos_x, pos_y, pos_z), yaw, pitch,
+//                    ResourceKey.create(Registries.DIMENSION, new ResourceLocation(dimension)),
+//                    GameType.byName(gamemode), flying);
+
+            GameProfileCache.setUsesAuthentication(false);
+
+            GameProfile gameprofile;
+            try {
+                gameprofile = server.getProfileCache().get(username).orElse(null);
+            } finally {
+                GameProfileCache.setUsesAuthentication(server.isDedicatedServer() && server.usesAuthentication());
+            }
+
+            if (gameprofile == null) {
+                if (!CarpetSettings.allowSpawningOfflinePlayers) {
+                    return;
+                }
+
+                gameprofile = new GameProfile(UUIDUtil.createOfflinePlayerUUID(username), username);
+            }
+
+            GameProfile finalGameprofile = gameprofile;
+            fetchGameProfile(gameprofile.getName()).thenAcceptAsync((p) -> {
+                GameProfile current = finalGameprofile;
+                if (p.isPresent()) {
+                    current = p.get();
+                }
+                EntityPlayerMPFake playerMPFake = EntityPlayerMPFake.respawnFake(server, worldIn, current,ClientInformation.createDefault());
+
+                apFromJson(actions, playerMPFake);
+            }, server);
+
+
+
         }
     }
 

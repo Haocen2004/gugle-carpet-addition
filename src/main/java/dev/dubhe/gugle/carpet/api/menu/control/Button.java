@@ -3,6 +3,9 @@ package dev.dubhe.gugle.carpet.api.menu.control;
 import dev.dubhe.gugle.carpet.api.Function;
 import dev.dubhe.gugle.carpet.api.tools.text.Color;
 import dev.dubhe.gugle.carpet.api.tools.text.ComponentTranslate;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
@@ -10,6 +13,7 @@ import net.minecraft.world.Container;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.CustomData;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -70,13 +74,21 @@ public class Button {
         this.compoundTag.putBoolean("GcaClear", true);
 
         ItemStack onItemStack = new ItemStack(onItem, itemCount);
-        onItemStack.setTag(compoundTag.copy());
-        onItemStack.setHoverName(onText);
+        onItemStack.applyComponents(DataComponentMap.builder()
+                .set(DataComponents.CUSTOM_DATA, CustomData.of(compoundTag))
+                .set(DataComponents.CUSTOM_NAME, onText)
+                .build());
+//        onItemStack.setTag(compoundTag.copy());
+//        onItemStack.setHoverName(onText);
         this.onItem = onItemStack;
 
         ItemStack offItemStack = new ItemStack(offItem, itemCount);
-        offItemStack.setTag(compoundTag.copy());
-        offItemStack.setHoverName(offText);
+        offItemStack.applyComponents(DataComponentMap.builder()
+                .set(DataComponents.CUSTOM_DATA, CustomData.of(compoundTag))
+                .set(DataComponents.CUSTOM_NAME, offText)
+                .build());
+//        offItemStack.setTag(compoundTag.copy());
+//        offItemStack.setHoverName(offText);
         this.offItem = offItemStack;
     }
 
@@ -85,11 +97,17 @@ public class Button {
         this.compoundTag.putBoolean("GcaClear", true);
 
         ItemStack onItemStack = onItem.copy();
-        onItemStack.setTag(compoundTag.copy());
+        onItemStack.applyComponents(DataComponentMap.builder()
+                .set(DataComponents.CUSTOM_DATA, CustomData.of(compoundTag))
+                .build());
+//        onItemStack.setTag(compoundTag.copy());
         this.onItem = onItemStack;
 
         ItemStack offItemStack = offItem.copy();
-        offItemStack.setTag(compoundTag.copy());
+        offItemStack.applyComponents(DataComponentMap.builder()
+                .set(DataComponents.CUSTOM_DATA, CustomData.of(compoundTag))
+                .build());
+//        offItemStack.setTag(compoundTag.copy());
         this.offItem = offItemStack;
     }
 

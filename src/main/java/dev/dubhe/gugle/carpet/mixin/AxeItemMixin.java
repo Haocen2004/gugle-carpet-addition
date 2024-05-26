@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(AxeItem.class)
 abstract class AxeItemMixin {
-    @Inject(method = "useOn", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/AxeItem;getStripped(Lnet/minecraft/world/level/block/state/BlockState;)Ljava/util/Optional;"), cancellable = true)
+    @Inject(method = "useOn", at = @At(value = "INVOKE"), cancellable = true)
     private void stripped(@NotNull UseOnContext context, CallbackInfoReturnable<InteractionResult> cir) {
         ItemStack itemStack = context.getItemInHand();
         String name = itemStack.getHoverName().getString();

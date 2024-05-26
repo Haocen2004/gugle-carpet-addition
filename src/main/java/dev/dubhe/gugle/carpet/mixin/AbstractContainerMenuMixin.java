@@ -1,5 +1,6 @@
 package dev.dubhe.gugle.carpet.mixin;
 
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ClickType;
@@ -21,13 +22,21 @@ abstract class AbstractContainerMenuMixin {
         if (mouseX < 0) return;
         Slot slot = gca$self.getSlot(mouseX);
         ItemStack itemStack = slot.getItem();
-        if (itemStack.getTag() != null) {
-            if (itemStack.getTag().get("GcaClear") != null) {
-                if (itemStack.getTag().getBoolean("GcaClear")) {
+        if (itemStack.getComponents().get(DataComponents.CUSTOM_DATA) != null) {
+            try {
+
+                if (itemStack.getComponents().get(DataComponents.CUSTOM_DATA).contains("GcaClear")) {
                     itemStack.setCount(0);
-                    ci.cancel();
                 }
-            }
+            } catch (Exception ignore) {}
         }
+//        if (itemStack.getTag() != null) {
+//            if (itemStack.getTag().get("GcaClear") != null) {
+//                if (itemStack.getTag().getBoolean("GcaClear")) {
+//                    itemStack.setCount(0);
+//                    ci.cancel();
+//                }
+//            }
+//        }
     }
 }
